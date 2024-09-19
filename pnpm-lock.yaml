@@ -18,6 +18,9 @@ importers:
       tsm:
         specifier: ^2.3.0
         version: 2.3.0
+      typescript:
+        specifier: ^4.0.0
+        version: 4.9.5
 
 packages:
 
@@ -733,6 +736,11 @@ packages:
   tsm@2.3.0:
     resolution: {integrity: sha512-++0HFnmmR+gMpDtKTnW3XJ4yv9kVGi20n+NfyQWB9qwJvTaIWY9kBmzek2YUQK5APTQ/1DTrXmm4QtFPmW9Rzw==}
     engines: {node: '>=12'}
+    hasBin: true
+
+  typescript@4.9.5:
+    resolution: {integrity: sha512-1FXk9E2Hm+QzZQ7z+McJiHL4NW1F2EzMu9Nq9i3zAaGqibafqYwCVU6WyWAuyQRRzOlxou8xZSyXLEN8oKj24g==}
+    engines: {node: '>=4.2.0'}
     hasBin: true
 
   undici-types@6.19.8:
@@ -1468,6 +1476,8 @@ snapshots:
   tsm@2.3.0:
     dependencies:
       esbuild: 0.15.18
+
+  typescript@4.9.5: {}
 
   undici-types@6.19.8: {}
 
