@@ -7,13 +7,10 @@ import {
 } from "@bot-whatsapp/bot"
 import { BaileysProvider, handleCtx } from "@bot-whatsapp/provider-baileys"
 
-// const flowBienvenida = addKeyword("hola").addAnswer(
-//   "¡Hola! Te doy la bienvenida."
-// )
 
-const flowBienvenida = addKeyword("hola").addAnswer("¡Hola! Te doy la bienvenida.").addAction((ctx: { from: string }) => {
-  console.log(`Received message from: ${ctx.from}`)
-})
+const flowBienvenida = addKeyword("hola")
+  .addAnswer("¡Hola! Te invito a que ingreses a nuestro sitio web donde podrás gestionar tus turnos")
+  
 
 /**
  *
@@ -24,25 +21,44 @@ const main = async () => {
   provider.initHttpServer(3002)
 
   provider.http?.server.get("status", (req, res) => {
-    res.end("Estoy vivo")
+    res.setHeader("Content-Type", "application/json")
+      res.end(
+        JSON.stringify({
+          status: "success",
+          message: "Escuchando atentamente",
+        })
+      )
   })
 
   provider.http?.server.post(
     "/send-message",
     handleCtx(async (bot, req, res) => {
-      const {phone, message} = req.body
+      const { phone, message } = req.body
       console.log({ phone, message })
       await bot.sendMessage(phone, message, {})
-      res.end("Esto es del server de polka")
+      res.setHeader("Content-Type", "application/json")
+      res.end(
+        JSON.stringify({
+          status: "success",
+          message: "Mensaje enviado correctamente",
+        })
+      )
     })
   )
 
 
   await createBot({
-    flow: createFlow([flowBienvenida]),
+    flow: createFlow([]),
     database: new MemoryDB(),
     provider: provider,
   })
-}
 
+  
+  // await createBot({
+  //   flow: createFlow([flowBienvenida]),
+  //   database: new MemoryDB(),
+  //   provider: provider,
+  // })
+}
+// 
 main()
