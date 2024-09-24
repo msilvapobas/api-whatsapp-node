@@ -1,69 +1,91 @@
-import https from 'https';
-import fs from 'fs';
-import polka from 'polka';
 import {
   addKeyword,
   createBot,
   createFlow,
   createProvider,
   MemoryDB,
-} from "@bot-whatsapp/bot";
-import { BaileysProvider, handleCtx } from "@bot-whatsapp/provider-baileys";
+} from "@bot-whatsapp/bot"
+import { BaileysProvider, handleCtx } from "@bot-whatsapp/provider-baileys"
+import * as fs from "fs"
+import * as https from "https"
+import { IncomingMessage, ServerResponse } from "http"
+import polka from "polka" // Asegúrate de importar Polka si no está ya importado
 
-const flowBienvenida = addKeyword("hola")
-  .addAnswer("¡Hola! Te invito a que ingreses a nuestro sitio web donde podrás gestionar tus turnos");
+// Lee los certificados SSL
+const privateKey = fs.readFileSync(
+  "/etc/letsencrypt/live/cloudserver.nerdyactor.com.ar/privkey.pem",
+  "utf8"
+)
+const certificate = fs.readFileSync(
+  "/etc/letsencrypt/live/cloudserver.nerdyactor.com.ar/cert.pem",
+  "utf8"
+)
+const ca = fs.readFileSync(
+  "/etc/letsencrypt/live/cloudserver.nerdyactor.com.ar/chain.pem",
+  "utf8"
+)
+
+const credentials = {
+  key: privateKey,
+  cert: certificate,
+  ca: ca,
+}
+
+const flowBienvenida = addKeyword("hola").addAnswer(
+  "¡Hola! Te invito a que ingreses a nuestro sitio web donde podrás gestionar tus turnos"
+)
 
 const main = async () => {
-  const provider = createProvider(BaileysProvider);
+  const provider = createProvider(BaileysProvider)
 
-  // Leer los archivos del certificado SSL
-  const privateKey = fs.readFileSync('/etc/letsencrypt/live/cloudserver.nerdyactor.com.ar/privkey.pem', 'utf8');
-  const certificate = fs.readFileSync('/etc/letsencrypt/live/cloudserver.nerdyactor.com.ar/cert.pem', 'utf8');
-  const ca = fs.readFileSync('/etc/letsencrypt/live/cloudserver.nerdyactor.com.ar/chain.pem', 'utf8');
+  // Inicializa el servidor HTTP de Polka
+  provider.initHttpServer(3002)
 
-  const credentials = { key: privateKey, cert: certificate, ca: ca };
+  // Extrae el manejador de solicitudes de Polka
+  const polkaApp = provider.http?.server
 
-  // Inicializar el bot
-  const bot = await createBot({
-    flow: createFlow([flowBienvenida]),
-    database: new MemoryDB(),
-    provider: provider,
-  });
+  const requestHandler = (req: IncomingMessage, res: ServerResponse) => {
+    polkaApp!.handler(req as any, res as any)
+  }
 
-  // Crear servidor Polka
-  const app = polka();
+  // Configura el servidor HTTPS
+  const httpsServer = https.createServer(credentials, requestHandler)
 
-  app.get('/status', (req, res) => {
-    res.setHeader("Content-Type", "application/json");
+  httpsServer.listen(3002, () => {
+    console.log("Servidor HTTPS escuchando en el puerto 3002")
+  })
+
+  polkaApp!.get("status", (req, res) => {
+    res.setHeader("Content-Type", "application/json")
     res.end(
       JSON.stringify({
         status: "success",
         message: "Escuchando atentamente",
       })
-    );
-  });
+    )
+  })
 
-  app.post('/send-message', handleCtx(async (bot, req, res) => {
-    const { phone, message } = req.body;
-    console.log({ phone, message });
-    await bot.sendMessage(phone, message, {});
-    res.setHeader("Content-Type", "application/json");
-    res.end(
-      JSON.stringify({
-        status: "success",
-        message: "Mensaje enviado correctamente",
-      })
-    );
-  }));
+  polkaApp!.post(
+    "/send-message",
+    handleCtx(async (bot, req, res) => {
+      const { phone, message } = req.body
+      console.log({ phone, message })
+      await bot.sendMessage(phone, message, {})
+      res.setHeader("Content-Type", "application/json")
+      res.end(
+        JSON.stringify({
+          status: "success",
+          message: "Mensaje enviado correctamente",
+        })
+      )
+    })
+  )
 
-  // Crear servidor HTTPS
-  const httpsServer = https.createServer(credentials, (req, res) => {
-    app.handler(req as any, res);
-  });
+  await createBot({
+    flow: createFlow([flowBienvenida]),
+    database: new MemoryDB(),
+    provider: provider,
+  })
+}
 
-  httpsServer.listen(3002, () => {
-    console.log('HTTPS Server running on port 3002');
-  });
-};
-
-main();
+main()
