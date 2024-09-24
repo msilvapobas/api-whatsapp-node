@@ -36,6 +36,7 @@ router.post(
     const { phone, message } = req.body;
     console.log({ phone, message });
     if (!bot || !bot.sendMessage) {
+      console.log("El objeto bot no está definido o no tiene el método sendMessage");
       res.status(500).json({
         status: "error",
         message: "El objeto bot no está definido o no tiene el método sendMessage",

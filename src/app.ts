@@ -1,13 +1,16 @@
-const {
+import {
   addKeyword,
   createBot,
   createFlow,
   createProvider,
   MemoryDB,
-} = require("@bot-whatsapp/bot");
-const { BaileysProvider, handleCtx } = require("@bot-whatsapp/provider-baileys");
-const fs = require("fs");
-const { ServerHttps } = require("./http/index.js");
+} from "@bot-whatsapp/bot";
+import { BaileysProvider, handleCtx } from "@bot-whatsapp/provider-baileys";
+import fs from "fs";
+import express, { Request, Response } from "express";
+import https from "https";
+import { join } from "path";
+import { createReadStream } from "fs";
 
 const flowBienvenida = addKeyword("hola").addAnswer(
   "¡Hola! Te invito a que ingreses a nuestro sitio web donde podrás gestionar tus turnos"
@@ -42,8 +45,55 @@ const main = async () => {
     provider: provider,
   });
 
-  const server = new ServerHttps(bot, credentials);
-  server.start();
+  const app = express();
+  app.use(express.json());
+
+  app.get("/status", (req: Request, res: Response) => {
+    res.json({
+      status: "success",
+      message: "Escuchando atentamente",
+    });
+  });
+
+  app.get("/get-qr", async (_: Request, res: Response) => {
+    const YOUR_PATH_QR = join(process.cwd(), `bot.qr.png`);
+    const fileStream = createReadStream(YOUR_PATH_QR);
+
+    res.writeHead(200, { "Content-Type": "image/png" });
+    fileStream.pipe(res);
+  });
+
+  // provider.initHttpServer(3002)
+
+  app.post(
+    "/send-message",
+    handleCtx(async (bot, req: Request, res: Response) => {
+      const { phone, message } = req.body;
+      console.log({ phone, message });
+      if (!bot || !bot.sendMessage) {
+        console.log("El objeto bot no está definido o no tiene el método sendMessage");
+        res.status(500).json({
+          status: "error",
+          message: "El objeto bot no está definido o no tiene el método sendMessage",
+        });
+        return;
+      }
+      await bot.sendMessage(phone, message, {});
+      res.setHeader("Content-Type", "application/json");
+      res.end(
+        JSON.stringify({
+          status: "success",
+          message: "Mensaje enviado correctamente",
+        })
+      );
+    })
+  );
+
+  const server = https.createServer(credentials, app);
+  const port = process.env.PORT || 3002;
+  server.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+  });
 };
 
 main();

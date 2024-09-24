@@ -2,11 +2,10 @@
   "name": "api-node-whatsapp",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/app.js",
   "type": "commonjs",
   "scripts": {
-    "build": "tsc && npm run copy-js",
-    "copy-js": "xcopy src\\http dist\\http /E /I /Y",
+    "build": "tsc",
     "dev": "npm run build && node dist/app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
