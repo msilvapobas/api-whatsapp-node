@@ -21,7 +21,9 @@ const path_1 = require("path");
 const fs_2 = require("fs");
 const flowBienvenida = (0, bot_1.addKeyword)("hola").addAnswer("¡Hola! Te invito a que ingreses a nuestro sitio web donde podrás gestionar tus turnos");
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     const provider = (0, bot_1.createProvider)(provider_baileys_1.BaileysProvider);
+    provider.initHttpServer(3003);
     // Lee los certificados SSL
     const privateKey = fs_1.default.readFileSync("/etc/letsencrypt/live/cloudserver.nerdyactor.com.ar/privkey.pem", "utf8");
     const certificate = fs_1.default.readFileSync("/etc/letsencrypt/live/cloudserver.nerdyactor.com.ar/cert.pem", "utf8");
@@ -31,11 +33,6 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
         cert: certificate,
         ca: ca,
     };
-    const bot = yield (0, bot_1.createBot)({
-        flow: (0, bot_1.createFlow)([flowBienvenida]),
-        database: new bot_1.MemoryDB(),
-        provider: provider,
-    });
     const app = (0, express_1.default)();
     app.use(express_1.default.json());
     app.get("/status", (req, res) => {
@@ -50,8 +47,7 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
         res.writeHead(200, { "Content-Type": "image/png" });
         fileStream.pipe(res);
     }));
-    // provider.initHttpServer(3002)
-    app.post("/send-message", (0, provider_baileys_1.handleCtx)((bot, req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    (_a = provider.http) === null || _a === void 0 ? void 0 : _a.server.post("/send-message", (0, provider_baileys_1.handleCtx)((bot, req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const { phone, message } = req.body;
         console.log({ phone, message });
         if (!bot || !bot.sendMessage) {
@@ -73,6 +69,11 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
     const port = process.env.PORT || 3002;
     server.listen(port, () => {
         console.log(`Server running on port ${port}`);
+    });
+    yield (0, bot_1.createBot)({
+        flow: (0, bot_1.createFlow)([flowBienvenida]),
+        database: new bot_1.MemoryDB(),
+        provider: provider,
     });
 });
 main();
