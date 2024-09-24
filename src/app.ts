@@ -14,9 +14,6 @@ const flowBienvenida = addKeyword("hola").addAnswer(
   "¡Hola! Te invito a que ingreses a nuestro sitio web donde podrás gestionar tus turnos"
 )
 
-/**
- *
- */
 const main = async () => {
   const provider = createProvider(BaileysProvider)
 
@@ -41,19 +38,18 @@ const main = async () => {
   }
 
   await createBot({
-    flow: createFlow([]),
+    flow: createFlow([flowBienvenida]),
     database: new MemoryDB(),
     provider: provider,
   })
 
   const app = express()
-  // provider.initHttpServer(3002)
 
-  https.createServer(credentials, app).listen(3002, () => {
-    console.log("Servidor HTTPS corriendo en el puerto 3002")
-  })
+  // Middleware para parsear JSON
+  app.use(express.json())
 
-  app.get("status", (_req: Request, res: Response) => {
+  // Define las rutas antes de iniciar el servidor
+  app.get("/status", (_req: Request, res: Response) => {
     res.json({
       status: "success",
       message: "Escuchando atentamente",
@@ -66,15 +62,17 @@ const main = async () => {
       const { phone, message } = req.body
       console.log({ phone, message })
       await bot.sendMessage(phone, message, {})
-      res.setHeader("Content-Type", "application/json")
-      res.end(
-        JSON.stringify({
-          status: "success",
-          message: "Mensaje enviado correctamente",
-        })
-      )
+      res.json({
+        status: "success",
+        message: "Mensaje enviado correctamente",
+      })
     })
   )
+
+  // Inicia el servidor HTTPS
+  https.createServer(credentials, app).listen(3002, () => {
+    console.log("Servidor HTTPS corriendo en el puerto 3002")
+  })
 }
-//
+
 main()
