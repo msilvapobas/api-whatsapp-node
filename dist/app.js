@@ -37,9 +37,6 @@ const provider_baileys_1 = require("@bot-whatsapp/provider-baileys");
 const fs = __importStar(require("fs"));
 const https = __importStar(require("https"));
 const flowBienvenida = (0, bot_1.addKeyword)("hola").addAnswer("¡Hola! Te invito a que ingreses a nuestro sitio web donde podrás gestionar tus turnos");
-/**
- *
- */
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c;
     const provider = (0, bot_1.createProvider)(provider_baileys_1.BaileysProvider);
@@ -52,7 +49,9 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
         cert: certificate,
         ca: ca,
     };
-    const server = https.createServer(credentials); // provider.initHttpServer(3002)
+    // Crea el servidor HTTPS utilizando las credenciales SSL
+    const server = https.createServer(credentials);
+    // Define las rutas antes de iniciar el servidor
     (_a = provider.http) === null || _a === void 0 ? void 0 : _a.server.get("status", (req, res) => {
         res.setHeader("Content-Type", "application/json");
         res.end(JSON.stringify({
@@ -70,21 +69,14 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
             message: "Mensaje enviado correctamente",
         }));
     })));
-    (_c = provider.http) === null || _c === void 0 ? void 0 : _c.server.listen({ server, port: 3002 }, (err) => {
-        if (err)
-            throw err;
-        console.log("Server running on port 3002");
+    // Inicia el servidor HTTPS
+    (_c = provider.http) === null || _c === void 0 ? void 0 : _c.server.listen(3002, server, () => {
+        console.log("El servidor está escuchando en el puerto 3002");
     });
     yield (0, bot_1.createBot)({
-        flow: (0, bot_1.createFlow)([]),
+        flow: (0, bot_1.createFlow)([flowBienvenida]),
         database: new bot_1.MemoryDB(),
         provider: provider,
     });
-    // await createBot({
-    //   flow: createFlow([flowBienvenida]),
-    //   database: new MemoryDB(),
-    //   provider: provider,
-    // })
 });
-//
 main();

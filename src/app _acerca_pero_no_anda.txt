@@ -13,6 +13,9 @@ const flowBienvenida = addKeyword("hola").addAnswer(
   "¡Hola! Te invito a que ingreses a nuestro sitio web donde podrás gestionar tus turnos"
 )
 
+/**
+ *
+ */
 const main = async () => {
   const provider = createProvider(BaileysProvider)
 
@@ -36,10 +39,8 @@ const main = async () => {
     ca: ca,
   }
 
-  // Crea el servidor HTTPS utilizando las credenciales SSL
-  const server = https.createServer(credentials)
+  const server = https.createServer(credentials) 
 
-  // Define las rutas antes de iniciar el servidor
   provider.http?.server.get("status", (req, res) => {
     res.setHeader("Content-Type", "application/json")
     res.end(
@@ -64,18 +65,24 @@ const main = async () => {
         })
       )
     })
-  )
+  ).listen({ server, port: 3002 })
 
-  // Inicia el servidor HTTPS
-  provider.http?.server.listen(3002, server, () => {
-    console.log("El servidor está escuchando en el puerto 3002")
+  provider.http?.server.listen(3002, server, (err: Error) => {
+    if (err) throw err
+    console.log("Server running on port 3002")
   })
 
   await createBot({
-    flow: createFlow([flowBienvenida]),
+    flow: createFlow([]),
     database: new MemoryDB(),
     provider: provider,
   })
-}
 
+  // await createBot({
+  //   flow: createFlow([flowBienvenida]),
+  //   database: new MemoryDB(),
+  //   provider: provider,
+  // })
+}
+//
 main()
