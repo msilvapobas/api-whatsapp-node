@@ -67,7 +67,7 @@ const main = async () => {
   )
 
   // Inicia el servidor HTTPS
-  provider.http?.server.listen(3002, server, () => {
+  server.listen({ provider, port: 3002 }, () => {
     console.log("El servidor está escuchando en el puerto 3002")
   })
 

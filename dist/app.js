@@ -38,7 +38,7 @@ const fs = __importStar(require("fs"));
 const https = __importStar(require("https"));
 const flowBienvenida = (0, bot_1.addKeyword)("hola").addAnswer("¡Hola! Te invito a que ingreses a nuestro sitio web donde podrás gestionar tus turnos");
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c;
+    var _a, _b;
     const provider = (0, bot_1.createProvider)(provider_baileys_1.BaileysProvider);
     // Lee los certificados SSL
     const privateKey = fs.readFileSync("/etc/letsencrypt/live/cloudserver.nerdyactor.com.ar/privkey.pem", "utf8");
@@ -70,7 +70,7 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
         }));
     })));
     // Inicia el servidor HTTPS
-    (_c = provider.http) === null || _c === void 0 ? void 0 : _c.server.listen(3002, server, () => {
+    server.listen({ provider, port: 3002 }, () => {
         console.log("El servidor está escuchando en el puerto 3002");
     });
     yield (0, bot_1.createBot)({
