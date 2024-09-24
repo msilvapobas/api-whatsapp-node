@@ -32,9 +32,8 @@ router.get("/get-qr", async (_, res) => {
 
 router.post(
   "/send-message",
-  handleCtx(async (req, res) => {
+  handleCtx(async (bot, req, res) => {
     const { phone, message } = req.body;
-    const bot = req.bot;
     console.log({ phone, message });
     if (!bot || !bot.sendMessage) {
       res.status(500).json({
