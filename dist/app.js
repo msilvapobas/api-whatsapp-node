@@ -31,17 +31,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const bot_1 = require("@bot-whatsapp/bot");
 const provider_baileys_1 = require("@bot-whatsapp/provider-baileys");
 const fs = __importStar(require("fs"));
 const https = __importStar(require("https"));
-const express_1 = __importDefault(require("express"));
 const flowBienvenida = (0, bot_1.addKeyword)("hola").addAnswer("¡Hola! Te invito a que ingreses a nuestro sitio web donde podrás gestionar tus turnos");
+/**
+ *
+ */
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b, _c;
     const provider = (0, bot_1.createProvider)(provider_baileys_1.BaileysProvider);
     // Lee los certificados SSL
     const privateKey = fs.readFileSync("/etc/letsencrypt/live/cloudserver.nerdyactor.com.ar/privkey.pem", "utf8");
@@ -52,33 +52,39 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
         cert: certificate,
         ca: ca,
     };
-    yield (0, bot_1.createBot)({
-        flow: (0, bot_1.createFlow)([flowBienvenida]),
-        database: new bot_1.MemoryDB(),
-        provider: provider,
-    });
-    const app = (0, express_1.default)();
-    // Middleware para parsear JSON
-    app.use(express_1.default.json());
-    // Define las rutas antes de iniciar el servidor
-    app.get("/status", (_req, res) => {
-        res.json({
+    const server = https.createServer(credentials); // provider.initHttpServer(3002)
+    (_a = provider.http) === null || _a === void 0 ? void 0 : _a.server.get("status", (req, res) => {
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify({
             status: "success",
             message: "Escuchando atentamente",
-        });
+        }));
     });
-    app.post("/send-message", (0, provider_baileys_1.handleCtx)((bot, req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    (_b = provider.http) === null || _b === void 0 ? void 0 : _b.server.post("/send-message", (0, provider_baileys_1.handleCtx)((bot, req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const { phone, message } = req.body;
         console.log({ phone, message });
         yield bot.sendMessage(phone, message, {});
-        res.json({
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify({
             status: "success",
             message: "Mensaje enviado correctamente",
-        });
+        }));
     })));
-    // Inicia el servidor HTTPS
-    https.createServer(credentials, app).listen(3002, () => {
-        console.log("Servidor HTTPS corriendo en el puerto 3002");
+    (_c = provider.http) === null || _c === void 0 ? void 0 : _c.server.listen({ server, port: 3002 }, (err) => {
+        if (err)
+            throw err;
+        console.log("Server running on port 3002");
     });
+    yield (0, bot_1.createBot)({
+        flow: (0, bot_1.createFlow)([]),
+        database: new bot_1.MemoryDB(),
+        provider: provider,
+    });
+    // await createBot({
+    //   flow: createFlow([flowBienvenida]),
+    //   database: new MemoryDB(),
+    //   provider: provider,
+    // })
 });
+//
 main();
