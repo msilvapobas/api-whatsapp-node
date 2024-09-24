@@ -8,64 +8,59 @@ import {
 import { BaileysProvider, handleCtx } from "@bot-whatsapp/provider-baileys"
 import * as fs from "fs"
 import * as https from "https"
-import { IncomingMessage, ServerResponse } from "http"
-import polka from "polka" // Asegúrate de importar Polka si no está ya importado
-
-// Lee los certificados SSL
-const privateKey = fs.readFileSync(
-  "/etc/letsencrypt/live/cloudserver.nerdyactor.com.ar/privkey.pem",
-  "utf8"
-)
-const certificate = fs.readFileSync(
-  "/etc/letsencrypt/live/cloudserver.nerdyactor.com.ar/cert.pem",
-  "utf8"
-)
-const ca = fs.readFileSync(
-  "/etc/letsencrypt/live/cloudserver.nerdyactor.com.ar/chain.pem",
-  "utf8"
-)
-
-const credentials = {
-  key: privateKey,
-  cert: certificate,
-  ca: ca,
-}
+import express, { Request, Response } from "express"
 
 const flowBienvenida = addKeyword("hola").addAnswer(
   "¡Hola! Te invito a que ingreses a nuestro sitio web donde podrás gestionar tus turnos"
 )
 
+/**
+ *
+ */
 const main = async () => {
   const provider = createProvider(BaileysProvider)
 
-  // Inicializa el servidor HTTP de Polka
-  provider.initHttpServer(3002)
+  // Lee los certificados SSL
+  const privateKey = fs.readFileSync(
+    "/etc/letsencrypt/live/cloudserver.nerdyactor.com.ar/privkey.pem",
+    "utf8"
+  )
+  const certificate = fs.readFileSync(
+    "/etc/letsencrypt/live/cloudserver.nerdyactor.com.ar/cert.pem",
+    "utf8"
+  )
+  const ca = fs.readFileSync(
+    "/etc/letsencrypt/live/cloudserver.nerdyactor.com.ar/chain.pem",
+    "utf8"
+  )
 
-  // Extrae el manejador de solicitudes de Polka
-  const polkaApp = provider.http?.server
-
-  const requestHandler = (req: IncomingMessage, res: ServerResponse) => {
-    polkaApp!.handler(req as any, res as any)
+  const credentials = {
+    key: privateKey,
+    cert: certificate,
+    ca: ca,
   }
 
-  // Configura el servidor HTTPS
-  const httpsServer = https.createServer(credentials, requestHandler)
-
-  httpsServer.listen(3002, () => {
-    console.log("Servidor HTTPS escuchando en el puerto 3002")
+  await createBot({
+    flow: createFlow([]),
+    database: new MemoryDB(),
+    provider: provider,
   })
 
-  polkaApp!.get("status", (req, res) => {
-    res.setHeader("Content-Type", "application/json")
-    res.end(
-      JSON.stringify({
-        status: "success",
-        message: "Escuchando atentamente",
-      })
-    )
+  const app = express()
+  // provider.initHttpServer(3002)
+
+  https.createServer(credentials, app).listen(3002, () => {
+    console.log("Servidor HTTPS corriendo en el puerto 3002")
   })
 
-  polkaApp!.post(
+  app.get("status", (_req: Request, res: Response) => {
+    res.json({
+      status: "success",
+      message: "Escuchando atentamente",
+    });
+  });
+
+  app.post(
     "/send-message",
     handleCtx(async (bot, req, res) => {
       const { phone, message } = req.body
@@ -80,12 +75,6 @@ const main = async () => {
       )
     })
   )
-
-  await createBot({
-    flow: createFlow([flowBienvenida]),
-    database: new MemoryDB(),
-    provider: provider,
-  })
 }
-
+//
 main()
