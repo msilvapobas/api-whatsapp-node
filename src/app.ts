@@ -36,14 +36,14 @@ const main = async () => {
     ca: ca,
   };
 
-  const server = new ServerHttps(provider, credentials);
-  server.start();
-
-  await createBot({
+  const bot = await createBot({
     flow: createFlow([flowBienvenida]),
     database: new MemoryDB(),
     provider: provider,
   });
+
+  const server = new ServerHttps(bot, credentials);
+  server.start();
 };
 
 main();

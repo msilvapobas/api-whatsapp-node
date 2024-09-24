@@ -24,12 +24,12 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
         cert: certificate,
         ca: ca,
     };
-    const server = new ServerHttps(provider, credentials);
-    server.start();
-    yield createBot({
+    const bot = yield createBot({
         flow: createFlow([flowBienvenida]),
         database: new MemoryDB(),
         provider: provider,
     });
+    const server = new ServerHttps(bot, credentials);
+    server.start();
 });
 main();

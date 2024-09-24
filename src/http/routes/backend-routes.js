@@ -32,9 +32,17 @@ router.get("/get-qr", async (_, res) => {
 
 router.post(
   "/send-message",
-  handleCtx(async (bot, req, res) => {
+  handleCtx(async (req, res) => {
     const { phone, message } = req.body;
+    const bot = req.bot;
     console.log({ phone, message });
+    if (!bot || !bot.sendMessage) {
+      res.status(500).json({
+        status: "error",
+        message: "El objeto bot no está definido o no tiene el método sendMessage",
+      });
+      return;
+    }
     await bot.sendMessage(phone, message, {});
     res.setHeader("Content-Type", "application/json");
     res.end(

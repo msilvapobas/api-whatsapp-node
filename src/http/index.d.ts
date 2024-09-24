@@ -5,7 +5,7 @@ export interface ServerHttpsConfig {
 }
 
 export class ServerHttps {
-  constructor(_provideWs: any, config: ServerHttpsConfig);
+  constructor(bot: any, config: ServerHttpsConfig);
   buildApp(): any;
   start(): void;
 }

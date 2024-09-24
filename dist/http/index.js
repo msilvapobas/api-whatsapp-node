@@ -3,8 +3,8 @@ const routes = require("./routes/backend-routes");
 const https = require("https");
 
 class ServerHttps {
-  constructor(provider, config) {
-    this.provider = provider;
+  constructor(bot, config) {
+    this.bot = bot;
     this.config = config;
   }
 
@@ -12,7 +12,7 @@ class ServerHttps {
     const app = express()
       .use(express.json())
       .use((req, res, next) => {
-        req.provider = this.provider;
+        req.bot = this.bot;
         next();
       })
       .use(routes);
