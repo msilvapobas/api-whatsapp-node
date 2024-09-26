@@ -1,5 +1,4 @@
 import {
-  addKeyword,
   createBot,
   createFlow,
   createProvider,
@@ -7,8 +6,9 @@ import {
 } from "@bot-whatsapp/bot"
 import { BaileysProvider, handleCtx } from "@bot-whatsapp/provider-baileys"
 import express, { Request, Response } from "express"
-import http from "http"
+import https from "https"
 import { join } from "path"
+import fs from "fs"
 import { createReadStream } from "fs"
 
 const main = async () => {
@@ -27,8 +27,19 @@ const main = async () => {
     provider: provider,
   })
 
-  // Crear un servidor HTTP que no sea provider y dejalo escuchando en el puerto 3002
-  const server = http.createServer(app)
+    // Leer los certificados SSL
+    const privateKey = fs.readFileSync("/etc/letsencrypt/live/cloudserver.nerdyactor.com.ar/privkey.pem", "utf8")
+    const certificate = fs.readFileSync("/etc/letsencrypt/live/cloudserver.nerdyactor.com.ar/cert.pem", "utf8")
+    const ca = fs.readFileSync("/etc/letsencrypt/live/cloudserver.nerdyactor.com.ar/chain.pem", "utf8")
+  
+    const credentials = {
+      key: privateKey,
+      cert: certificate,
+      ca: ca,
+    }
+
+   // Crear un servidor HTTPS
+   const server = https.createServer(credentials, app)
 
   app.get("/status", (req, res) => {
     res.setHeader("Content-Type", "application/json")
@@ -61,7 +72,7 @@ const main = async () => {
   })
 
   server.listen(port, () => {
-    console.log(`Servidor escuchando en el puerto ${port}`)
+    console.log(`Servidor seguro escuchando en el puerto ${port}`)
   })
 }
 
