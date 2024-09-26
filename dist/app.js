@@ -14,66 +14,85 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const bot_1 = require("@bot-whatsapp/bot");
 const provider_baileys_1 = require("@bot-whatsapp/provider-baileys");
-const fs_1 = __importDefault(require("fs"));
 const express_1 = __importDefault(require("express"));
-const https_1 = __importDefault(require("https"));
+const http_1 = __importDefault(require("http"));
 const path_1 = require("path");
-const fs_2 = require("fs");
-const flowBienvenida = (0, bot_1.addKeyword)("hola").addAnswer("¡Hola! Te invito a que ingreses a nuestro sitio web donde podrás gestionar tus turnos");
+const fs_1 = require("fs");
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
-    const provider = (0, bot_1.createProvider)(provider_baileys_1.BaileysProvider);
-    provider.initHttpServer(3003);
-    // Lee los certificados SSL
-    const privateKey = fs_1.default.readFileSync("/etc/letsencrypt/live/cloudserver.nerdyactor.com.ar/privkey.pem", "utf8");
-    const certificate = fs_1.default.readFileSync("/etc/letsencrypt/live/cloudserver.nerdyactor.com.ar/cert.pem", "utf8");
-    const ca = fs_1.default.readFileSync("/etc/letsencrypt/live/cloudserver.nerdyactor.com.ar/chain.pem", "utf8");
-    const credentials = {
-        key: privateKey,
-        cert: certificate,
-        ca: ca,
-    };
     const app = (0, express_1.default)();
+    const port = 3002;
+    // Middleware para parsear cuerpos JSON
     app.use(express_1.default.json());
+    // Crear un proveedor de baileys que manejara la conexion con WhatsApp
+    const provider = (0, bot_1.createProvider)(provider_baileys_1.BaileysProvider);
+    yield (0, bot_1.createBot)({
+        flow: (0, bot_1.createFlow)([]),
+        database: new bot_1.MemoryDB(),
+        provider: provider,
+    });
+    // Crear un servidor HTTP que no sea provider y dejalo escuchando en el puerto 3002
+    const server = http_1.default.createServer(app);
     app.get("/status", (req, res) => {
-        res.json({
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify({
             status: "success",
             message: "Escuchando atentamente",
-        });
+        }));
     });
     app.get("/get-qr", (_, res) => __awaiter(void 0, void 0, void 0, function* () {
         const YOUR_PATH_QR = (0, path_1.join)(process.cwd(), `bot.qr.png`);
-        const fileStream = (0, fs_2.createReadStream)(YOUR_PATH_QR);
+        const fileStream = (0, fs_1.createReadStream)(YOUR_PATH_QR);
         res.writeHead(200, { "Content-Type": "image/png" });
         fileStream.pipe(res);
     }));
-    (_a = provider.http) === null || _a === void 0 ? void 0 : _a.server.post("/send-message", (0, provider_baileys_1.handleCtx)((bot, req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    // app.post("/send-message", async (req: Request, res: Response) => {
+    //   // const bot = await createBot({
+    //   //   flow: createFlow([]),
+    //   //   database: new MemoryDB(),
+    //   //   provider: provider,
+    //   // });
+    //   handleCtx( async (bot, req, res) => {
+    //     if (!bot) {
+    //       res.status(500).json({ status: "error", message: "Bot no inicializado" });
+    //       return;
+    //     }
+    //     const { phone, message } = req.body;
+    //     console.log({ phone, message });
+    //     await bot.sendMessage(phone, message, {});
+    //     res.setHeader("Content-Type", "application/json");
+    //     res.end(
+    //       JSON.stringify({
+    //         status: "success",
+    //         message: "Mensaje enviado correctamente",
+    //       })
+    //     );
+    //   })(req, res);
+    // })
+    app.post("/send-message", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const { phone, message } = req.body;
-        console.log({ phone, message });
-        if (!bot || !bot.sendMessage) {
-            console.log("El objeto bot no está definido o no tiene el método sendMessage");
-            res.status(500).json({
-                status: "error",
-                message: "El objeto bot no está definido o no tiene el método sendMessage",
-            });
-            return;
-        }
-        yield bot.sendMessage(phone, message, {});
-        res.setHeader("Content-Type", "application/json");
+        yield provider.sendMessage(phone, message, {});
         res.end(JSON.stringify({
             status: "success",
             message: "Mensaje enviado correctamente",
         }));
-    })));
-    const server = https_1.default.createServer(credentials, app);
-    const port = process.env.PORT || 3002;
+    }));
+    // provider.http?.server.post(
+    //   "/send-message",
+    //   handleCtx(async (bot, req, res) => {
+    //     const { phone, message } = req.body;
+    //     console.log({ phone, message });
+    //     await bot.sendMessage(phone, message, {});
+    //     res.setHeader("Content-Type", "application/json");
+    //     res.end(
+    //       JSON.stringify({
+    //         status: "success",
+    //         message: "Mensaje enviado correctamente",
+    //       })
+    //     );
+    //   })
+    // );
     server.listen(port, () => {
-        console.log(`Server running on port ${port}`);
-    });
-    yield (0, bot_1.createBot)({
-        flow: (0, bot_1.createFlow)([flowBienvenida]),
-        database: new bot_1.MemoryDB(),
-        provider: provider,
+        console.log(`Servidor escuchando en el puerto ${port}`);
     });
 });
-main();
+main().catch(console.error);
