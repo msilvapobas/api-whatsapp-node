@@ -19,11 +19,25 @@ const https_1 = __importDefault(require("https"));
 const path_1 = require("path");
 const fs_1 = __importDefault(require("fs"));
 const fs_2 = require("fs");
+const dotenv_1 = __importDefault(require("dotenv"));
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
+    // Cargar variables de entorno
+    dotenv_1.default.config();
     const app = (0, express_1.default)();
-    const port = 3002;
+    const port = process.env.AUTH_TOKEN || 3000;
+    const AUTH_TOKEN = process.env.AUTH_TOKEN || "default-token";
     // Middleware para parsear cuerpos JSON
     app.use(express_1.default.json());
+    // Middleware de autenticación
+    const authenticate = (req, res, next) => {
+        const token = req.headers['x-auth-token'];
+        if (token === AUTH_TOKEN) {
+            next();
+        }
+        else {
+            res.status(403).json({ status: 'error', message: 'Forbidden' });
+        }
+    };
     // Crear un proveedor de baileys que manejara la conexion con WhatsApp
     const provider = (0, bot_1.createProvider)(provider_baileys_1.BaileysProvider);
     yield (0, bot_1.createBot)({
@@ -49,13 +63,13 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
             message: "Escuchando atentamente",
         }));
     });
-    app.get("/get-qr", (_, res) => __awaiter(void 0, void 0, void 0, function* () {
+    app.get("/get-qr", authenticate, (_, res) => __awaiter(void 0, void 0, void 0, function* () {
         const YOUR_PATH_QR = (0, path_1.join)(process.cwd(), `bot.qr.png`);
         const fileStream = (0, fs_2.createReadStream)(YOUR_PATH_QR);
         res.writeHead(200, { "Content-Type": "image/png" });
         fileStream.pipe(res);
     }));
-    app.post("/send-message", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    app.post("/send-message", authenticate, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const { phone, message } = req.body;
         yield provider.sendMessage(phone, message, {});
         res.end(JSON.stringify({
