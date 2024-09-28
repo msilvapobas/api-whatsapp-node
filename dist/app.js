@@ -24,7 +24,7 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
     // Cargar variables de entorno
     dotenv_1.default.config();
     const app = (0, express_1.default)();
-    const port = process.env.port || 3000;
+    const port = process.env.PORT || 3000;
     const AUTH_TOKEN = process.env.AUTH_TOKEN || "default-token";
     // Middleware para parsear cuerpos JSON
     app.use(express_1.default.json());
